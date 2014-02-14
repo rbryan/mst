@@ -26,9 +26,16 @@ graph_t *new_graph(int side);
 void load_graph(graph_t **graph,int side);
 int get_num();
 int is_used( graph_t * graph, int node);
+void find_start(graph_t *graph);
+int mst(graph_t *graph);
+void fbest(graph_t *graph, pt *p);
+
+int sx,sy;
 
 int main(int argc, char **argv){
 	int side;
+	int mst_cost;
+	int graph_cost;
 
 	side = atoi(argv[1]);
 	printf("Side: %d\n",side);
@@ -38,29 +45,84 @@ int main(int argc, char **argv){
 	graph = new_graph(side);
 	load_graph(&graph,side);
 	print_graph(graph);
-	
-	tree = mst(graph);
+	find_start(graph);
+
+	graph_cost = sum_graph(graph);
+	mst_cost = mst(graph);
+
+	printf("graph: %d\t mst: %d\n",graph_cost,mst_cost);
+	printf("Savings: %d\n",graph_cost-mst_cost);
 
 
 }
 
-graph_t *mst(graph_t *graph){
-	
+int sum_graph(graph_t *graph){
+	int sum;
+	int i,j;
+	sum = 0;
+	for(i=0; i<graph->side; i++){
+		for(j=0; j<graph->side; j++){
+			sum+=graph->matrix[i][j];
+		}
+	}
+
+	return sum/2;
+}
+
+
+void find_start(graph_t *graph){
+	int i,j;
+
+	for(i=0; i < graph->side; i++){
+		for(j=0; j < graph->side; j++){
+
+			if(graph->matrix[i][j] != 0){
+				sx = i;
+				sy = j;
+			}
+		}
+	}
+}
+
+int mst(graph_t *graph){
+	int i,j;
 	pt best;
+	int cost;
+
+	cost = 0;
+
+	toggle_used(graph,sx);
 
 	while(graph->n_left){
-		
+		fbest(graph,&best);
+		toggle_used(graph,best.y);
+		printf("%d->%d\n",best.x,best.y);
+		cost += graph->matrix[best.x][best.y];
 	}
+
+	return cost;	
 
 }
 
-pt best(graph_t *graph){
-	int x,y;
-	int i;
 
-	for(i=0; i < graph->n_left; i++){
-	
+void fbest(graph_t *graph, pt *p){
+	int bx=sx,by=sy;
+	int i,j;
+	for(i=0; i<graph->side; i++){
+		if(is_used(graph,i)){
+			for(j=0; j<graph->side; j++){
+				if(is_used(graph,j)) continue;
+				if(graph->matrix[i][j] != 0){
+					if(graph->matrix[i][j] < graph->matrix[bx][by]){
+						bx = i;
+						by = j;
+					}
+				}	
+			}
+		}
 	}
+	p->x = bx;
+	p->y = by;
 
 }
 
